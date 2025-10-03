@@ -3,9 +3,11 @@ use rand::Rng;
 use std::time::Duration;
 
 const PHEEPLE_COLOR: Color = Color::srgb(1.0, 0.5, 0.5);
+const PHEEPLE_SIZE: f32 = 3.;
 const MEEPLE_SPEED: f32 = 500.;
-const INITIAL_POP: i32 = 20;
+const INITIAL_POP: i32 = 2000;
 const ARRIVAL_RADIUS: f32 = 10.;
+const HALF_DAY_DURATION_SECS: u64 = 5;
 
 #[derive(Component)]
 struct GameCamera;
@@ -75,7 +77,10 @@ fn day_night_cycle(
 fn setup(mut commands: Commands) {
     commands.spawn((Camera2d, GameCamera));
     commands.insert_resource(HalfDayTimer {
-        timer: Timer::new(Duration::from_secs(10), TimerMode::Repeating),
+        timer: Timer::new(
+            Duration::from_secs(HALF_DAY_DURATION_SECS),
+            TimerMode::Repeating,
+        ),
     })
 }
 
@@ -92,19 +97,18 @@ fn init_pheeple(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let home_neighbourhood = Aabb2d::new(vec2(-400., -200.), vec2(200., 200.));
-    let work_neighbourhood = Aabb2d::new(vec2(400., 200.), vec2(200., 200.));
+    let whole_neighbourhood = Aabb2d::new(vec2(0., 0.), vec2(340., 250.));
 
     for _ in 0..INITIAL_POP {
-        let home = random_point(home_neighbourhood).extend(1.);
-        let work = random_point(work_neighbourhood).extend(1.);
+        let home = random_point(whole_neighbourhood).extend(1.);
+        let work = random_point(whole_neighbourhood).extend(1.);
         commands.spawn((
             Pheeple {
                 behavior: Behavior::AtHome,
             },
             Mesh2d(meshes.add(Circle::default())),
             MeshMaterial2d(materials.add(PHEEPLE_COLOR)),
-            Transform::from_translation(home).with_scale(Vec2::splat(10.).extend(1.)),
+            Transform::from_translation(home).with_scale(Vec2::splat(PHEEPLE_SIZE).extend(1.)),
             MoveBehavior {
                 velocity: MEEPLE_SPEED,
                 target: work,
