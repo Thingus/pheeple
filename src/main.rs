@@ -1,4 +1,6 @@
 mod pheeple;
+mod tower;
+mod utils;
 use bevy::prelude::*;
 // use rand::Rng;
 use std::time::Duration;
@@ -21,7 +23,7 @@ struct HalfDayTimer {
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, pheeple::pheeple_plugin))
+        .add_plugins((DefaultPlugins, pheeple::pheeple_plugin, tower::tower_plugin))
         .add_systems(Startup, setup)
         .add_systems(Update, day_night_cycle)
         .insert_state(DayNight::Day)

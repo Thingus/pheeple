@@ -1,5 +1,5 @@
+use crate::utils;
 use bevy::{math::bounding::Aabb2d, prelude::*};
-use rand::Rng;
 const INITIAL_POP: i32 = 2000;
 const ARRIVAL_RADIUS: f32 = 10.;
 const PHEEPLE_COLOR: Color = Color::srgb(1.0, 0.5, 0.5);
@@ -7,7 +7,7 @@ const PHEEPLE_SIZE: f32 = 3.;
 const MEEPLE_SPEED: f32 = 500.;
 
 pub fn pheeple_plugin(app: &mut App) {
-    app.add_systems(Startup, init_pheeple);
+    app.add_systems(Startup, init_pheeples);
     app.add_systems(Update, (move_towards, check_arrived));
 }
 
@@ -35,24 +35,18 @@ pub struct Home(Vec3);
 #[derive(Component)]
 pub struct Work(Vec3);
 
-fn random_point(bbox: Aabb2d) -> Vec2 {
-    let mut rng = rand::rng();
-    Vec2 {
-        x: rng.random_range(bbox.min.x..bbox.max.x),
-        y: rng.random_range(bbox.min.y..bbox.max.y),
-    }
-}
-
-fn init_pheeple(
+fn init_pheeples(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let whole_neighbourhood = Aabb2d::new(vec2(0., 0.), vec2(340., 250.));
+    // let whole_neighbourhood = Aabb2d::new(vec2(0., 0.), vec2(340., 250.));
+    let home_neighbourhood = Aabb2d::new(vec2(-250., -30.), vec2(80., 100.));
+    let work_neighbourhood = Aabb2d::new(vec2(250., 30.), vec2(80., 100.));
 
     for _ in 0..INITIAL_POP {
-        let home = random_point(whole_neighbourhood).extend(1.);
-        let work = random_point(whole_neighbourhood).extend(1.);
+        let home = utils::random_point(home_neighbourhood).extend(1.);
+        let work = utils::random_point(work_neighbourhood).extend(1.);
         commands.spawn((
             Pheeple {
                 behavior: Behavior::AtHome,
@@ -112,7 +106,6 @@ fn check_arrived(
                 Behavior::Working => Behavior::Working,
             };
             commands.entity(entity).remove::<MoveBehavior>();
-            print!("{entity} has reached destination")
         }
     }
 }
