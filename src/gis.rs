@@ -1,3 +1,4 @@
+use bevy::color::palettes::css::LIGHT_CYAN;
 use bevy::math::bounding::BoundingVolume;
 use bevy::{math::bounding::Aabb2d, prelude::*};
 use geojson::{
@@ -8,9 +9,16 @@ use std::fs;
 use std::path::Path;
 
 const MAP_PATH: &str = "/home/john/personal/pheeples/data/haiti_admin2.geojson";
+const BASEMAP_COLOR: Color = Color::Srgba(LIGHT_CYAN);
 pub fn gis_plugin(app: &mut App) {
     app.init_resource::<Basemap>();
-    app.add_systems(Startup, ());
+    app.add_systems(
+        Startup,
+        (
+            build_map_to_game_projection,
+            spawn_basemap.after(build_map_to_game_projection),
+        ),
+    );
 }
 
 struct GeoToGameProj {
@@ -46,7 +54,12 @@ impl Default for Basemap {
         let n_areas = admin_areas.features.len();
         info!("{n_areas} admin areas loaded");
 
-        let mut growing_bbox = smallest_bbox();
+        let mut growing_bbox = admin_areas.features[0]
+            .geometry
+            .clone()
+            .unwrap()
+            .value
+            .feature_bbox();
         let mut areas: Vec<Area> = [].to_vec();
 
         for feature in admin_areas.features {
@@ -64,13 +77,6 @@ impl Default for Basemap {
     }
 }
 
-fn smallest_bbox() -> Aabb2d {
-    Aabb2d {
-        min: Vec2::new(f32::MIN, f32::MIN),
-        max: Vec2::new(f32::MIN, f32::MIN),
-    }
-}
-
 fn point_list_to_bbox(point_list: &Vec<Vec<f64>>) -> Aabb2d {
     let mut xmin = -f64::INFINITY;
     let mut xmax = f64::INFINITY;
@@ -79,15 +85,17 @@ fn point_list_to_bbox(point_list: &Vec<Vec<f64>>) -> Aabb2d {
     // GeoJson should always be [x,y]
     // We have no way to prove this, so we'll just have to trust.
     for coord in point_list {
-        xmin = if coord[0] < xmin { coord[0] } else { xmin };
-        xmax = if coord[0] > xmax { coord[0] } else { xmax };
-        ymin = if coord[1] < ymin { coord[1] } else { ymin };
-        ymax = if coord[1] > ymax { coord[1] } else { ymax };
+        xmin = if coord[0] > xmin { coord[0] } else { xmin };
+        xmax = if coord[0] < xmax { coord[0] } else { xmax };
+        ymin = if coord[1] > ymin { coord[1] } else { ymin };
+        ymax = if coord[1] < ymax { coord[1] } else { ymax };
     }
-    Aabb2d {
+    let out = Aabb2d {
         min: Vec2::new(xmin as f32, ymin as f32),
         max: Vec2::new(xmax as f32, ymax as f32),
-    }
+    };
+    info!("point list translation: {out:#?}");
+    out
 }
 
 trait GeoBbox {
@@ -115,56 +123,92 @@ impl GeoBbox for Vec<PointType> {
 
 impl GeoBbox for PolygonType {
     fn feature_bbox(&self) -> Aabb2d {
-        let mut outer_bbox = smallest_bbox();
-        for linear_ring in self {
-            outer_bbox = outer_bbox.merge(&linear_ring.feature_bbox());
-        }
-        outer_bbox
+        self.iter().fold(self[0].feature_bbox(), |running, this| {
+            running.merge(&this.feature_bbox())
+        })
     }
 }
 
 impl GeoBbox for Vec<PolygonType> {
     fn feature_bbox(&self) -> Aabb2d {
-        let mut outer_bbox = smallest_bbox();
-        for polygon in self {
-            outer_bbox = outer_bbox.merge(&polygon.feature_bbox())
-        }
-        outer_bbox
+        self.iter().fold(self[0].feature_bbox(), |running, this| {
+            running.merge(&this.feature_bbox())
+        })
     }
 }
 
-fn build_map_to_game_projection(mut basemap: ResMut<Basemap>, world_bbox: Aabb2d) {
+fn build_map_to_game_projection(mut basemap: ResMut<Basemap>, window: Single<&Window>) {
+    let world_bbox = Aabb2d::new(Vec2 { x: 0., y: 0. }, window.size() / 2.);
+
     let basemap_bbox = basemap.bbox;
+    // This is too dang small
+    info!("Basemap_bbox: {basemap_bbox:#?}");
     let basemap_size = basemap_bbox.max - basemap_bbox.min;
+    info!("Basemap_size: {basemap_size:#?}");
     let world_size = world_bbox.max - world_bbox.min;
+    info!("world_size: {world_size:#?}");
     // Note; world_bbox.center _should_ always be 0,0 but just in case it isnt...
     let geo_offset = basemap_bbox.center() - world_bbox.center();
+    info!("geo_offset: {geo_offset:#?}");
+
     let offset = Vec2::new(geo_offset[0], geo_offset[1]);
+    info!("Offset: {offset:#?}");
     // Moves the world to the game
     let ratio = world_size / basemap_size;
+    info!("Ratio: {ratio:#?}");
     basemap.geo_to_game_proj = Some(GeoToGameProj { offset, ratio })
 }
 
-fn spawn_area(
-    area: Area,
+fn spawn_basemap(
+    basemap: Res<Basemap>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    basemap: Res<Basemap>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let area_vertices = match area.geometry {
-        geojson::Value::Polygon(geom) => geom[0],
-        geojson::Value::LineString(geom) => geom,
-        geojson::Value::MultiPolygon(geom) => geom[0][0],
-        geojson::Value::MultiLineString(geom) => geom[0],
+    for area in &basemap.areas {
+        spawn_area(area, &mut commands, &mut meshes, &mut materials, &basemap)
+    }
+}
+
+fn spawn_area(
+    area: &Area,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+    basemap: &Res<Basemap>,
+) {
+    let area_vertices = match &area.geometry {
+        geojson::Value::Polygon(geom) => geom[0].clone(),
+        geojson::Value::LineString(geom) => geom.to_vec(),
+        geojson::Value::MultiPolygon(geom) => geom[0][0].clone(),
+        geojson::Value::MultiLineString(geom) => geom[0].clone(),
         _ => panic!("Geometry must be polygon, multipolygon or linestring"),
     };
+    let area_coord = &area_vertices[0];
+    info!("Geo coord: {area_coord:#?}");
     let vertices = area_vertices
         .iter()
         .map(|vert| Vec2 {
             x: vert[0] as f32,
             y: vert[1] as f32,
         })
-        .map(|vert| basemap.geo_to_game_proj.unwrap().do_transform(vert));
-    let area_polygon = Polygon::from_iter(vertices);
-    commands.spawn((Mesh2d(meshes.add(area_polygon))))
+        .map(|vert| {
+            basemap
+                .geo_to_game_proj
+                .as_ref()
+                .unwrap()
+                .do_transform(vert)
+        });
+    // let area_polygon = Polyline2d::from_iter(vec![
+    //     Vec2 { x: 100., y: 100. },
+    //     Vec2 { x: 100., y: -100. },
+    //     Vec2 { x: -100., y: -100. },
+    // ]);
+    let area_polygon = Polyline2d::from_iter(vertices);
+    let poly_coord = &area_polygon.vertices[0];
+    info!("Gameword coord: {poly_coord:#?}");
+    commands.spawn((
+        Mesh2d(meshes.add(area_polygon)),
+        MeshMaterial2d(materials.add(BASEMAP_COLOR)),
+    ));
 }
