@@ -28,7 +28,7 @@ struct GeoToGameProj {
 
 impl GeoToGameProj {
     fn do_transform(&self, geo_point: Vec2) -> Vec2 {
-        (geo_point * self.ratio) + self.offset
+        (geo_point - self.offset) * self.ratio
     }
 }
 
@@ -90,11 +90,23 @@ fn point_list_to_bbox(point_list: &Vec<Vec<f64>>) -> Aabb2d {
         ymin = if coord[1] > ymin { coord[1] } else { ymin };
         ymax = if coord[1] < ymax { coord[1] } else { ymax };
     }
+    // If we get bbox that crosses boundaries, we end up with mixed coord. This should fix that.
+    (ymin, ymax) = if ymax < ymin {
+        (ymax, ymin)
+    } else {
+        (ymin, ymax)
+    };
+
+    (xmin, xmax) = if xmax < xmin {
+        (xmax, xmin)
+    } else {
+        (xmin, xmax)
+    };
     let out = Aabb2d {
         min: Vec2::new(xmin as f32, ymin as f32),
         max: Vec2::new(xmax as f32, ymax as f32),
     };
-    info!("point list translation: {out:#?}");
+    // info!("point list translation: {out:#?}");
     out
 }
 
@@ -151,9 +163,11 @@ fn build_map_to_game_projection(mut basemap: ResMut<Basemap>, window: Single<&Wi
     let geo_offset = basemap_bbox.center() - world_bbox.center();
     info!("geo_offset: {geo_offset:#?}");
 
+    // Moves the centre of the basemap to the center of the gameworld
     let offset = Vec2::new(geo_offset[0], geo_offset[1]);
     info!("Offset: {offset:#?}");
-    // Moves the world to the game
+
+    // Stretches the basemap from the origin to cover the world coord system neatly
     let ratio = world_size / basemap_size;
     info!("Ratio: {ratio:#?}");
     basemap.geo_to_game_proj = Some(GeoToGameProj { offset, ratio })
