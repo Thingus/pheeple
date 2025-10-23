@@ -1,3 +1,4 @@
+use crate::gis::GeoBbox;
 use bevy::{
     math::bounding::{Aabb2d, Bounded2d},
     prelude::Isometry2d,
@@ -6,7 +7,7 @@ use bevy::{
 };
 use rand::Rng;
 
-trait RandomPoint {
+pub trait RandomPoint {
     fn random_point(&self) -> Vec2;
 }
 
@@ -23,5 +24,11 @@ impl RandomPoint for Aabb2d {
 impl RandomPoint for Polyline2d {
     fn random_point(&self) -> Vec2 {
         self.aabb_2d(Isometry2d::IDENTITY).random_point()
+    }
+}
+
+impl RandomPoint for geojson::Value {
+    fn random_point(&self) -> Vec2 {
+        self.feature_bbox().random_point()
     }
 }

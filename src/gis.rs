@@ -21,28 +21,29 @@ pub fn gis_plugin(app: &mut App) {
     );
 }
 
-struct GeoToGameProj {
+#[derive(Clone)]
+pub struct GeoToGameProj {
     ratio: Vec2,
     offset: Vec2,
 }
 
 impl GeoToGameProj {
-    fn do_transform(&self, geo_point: Vec2) -> Vec2 {
+    pub fn do_transform(&self, geo_point: Vec2) -> Vec2 {
         (geo_point - self.offset) * self.ratio
     }
 }
 
 #[derive(Clone)]
-struct Area {
-    geometry: geojson::Value,
-    name: String,
+pub struct Area {
+    pub geometry: geojson::Value,
+    pub name: String,
 }
 
 #[derive(Resource)]
 pub struct Basemap {
-    bbox: Aabb2d,
-    areas: Vec<Area>,
-    geo_to_game_proj: Option<GeoToGameProj>,
+    pub bbox: Aabb2d,
+    pub areas: Vec<Area>,
+    pub geo_to_game_proj: Option<GeoToGameProj>,
 }
 
 impl Default for Basemap {
@@ -173,7 +174,7 @@ fn build_map_to_game_projection(mut basemap: ResMut<Basemap>, window: Single<&Wi
     basemap.geo_to_game_proj = Some(GeoToGameProj { offset, ratio })
 }
 
-fn spawn_basemap(
+pub fn spawn_basemap(
     basemap: Res<Basemap>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
