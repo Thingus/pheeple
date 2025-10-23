@@ -1,0 +1,3 @@
+A multi-agent simulation in Rust, with GIS integration.
+More to come...
+[Screencast from 23-10-25 17:37:13.webm](https://github.com/user-attachments/assets/70016966-b05d-4577-93f6-e5a47df53407)
