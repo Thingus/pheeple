@@ -110,7 +110,7 @@ fn point_list_to_bbox(point_list: &Vec<Vec<f64>>) -> Aabb2d {
     out
 }
 
-trait GeoBbox {
+pub trait GeoBbox {
     fn feature_bbox(&self) -> Aabb2d;
 }
 
