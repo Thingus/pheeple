@@ -2,6 +2,7 @@ use crate::utils;
 use crate::utils::RandomPoint;
 use bevy::{math::bounding::Aabb2d, prelude::*};
 use rand::Rng;
+use uuid::Uuid;
 const INITIAL_POP: i32 = 2000;
 const ARRIVAL_RADIUS: f32 = 10.;
 const PHEEPLE_COLOR: Color = Color::srgb(1.0, 0.5, 0.5);
@@ -23,6 +24,7 @@ pub enum Behavior {
 #[derive(Component)]
 pub struct Pheeple {
     behavior: Behavior,
+    pub phone_id: Uuid,
 }
 
 #[derive(Component)]
@@ -72,6 +74,7 @@ fn spawn_pheeple(
     commands.spawn((
         Pheeple {
             behavior: Behavior::AtHome,
+            phone_id: Uuid::new_v4(),
         },
         Mesh2d(meshes.add(Circle::default())),
         MeshMaterial2d(materials.add(PHEEPLE_COLOR)),

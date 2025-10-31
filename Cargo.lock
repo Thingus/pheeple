@@ -3536,6 +3536,7 @@ dependencies = [
  "geojson",
  "rand",
  "shapefile",
+ "uuid",
 ]
 
 [[package]]

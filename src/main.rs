@@ -1,3 +1,4 @@
+mod data_writer;
 mod gis;
 mod pheeple;
 mod tower;
@@ -29,6 +30,7 @@ fn main() {
             pheeple::pheeple_plugin,
             tower::tower_plugin,
             gis::gis_plugin,
+            data_writer::data_writer_plugin,
         ))
         .add_systems(Startup, setup)
         .add_systems(Update, day_night_cycle)

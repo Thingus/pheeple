@@ -1,5 +1,8 @@
 # [build]
 # target="wasm32-unknown-unknown"
 
+[env]
+PHEEPLE_OUT_DIR = "/home/john/personal/pheeples/outputs"
+
 [target.wasm32-unknown-unknown]
 rustflags = ['--cfg', 'getrandom_backend="wasm_js"']

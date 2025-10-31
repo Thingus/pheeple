@@ -1,70 +1,80 @@
 use crate::pheeple::Pheeple;
+use crate::utils::RandomPoint;
 use bevy::color::palettes::css::DARK_GREEN;
 use bevy::mesh::VertexAttributeValues;
 use bevy::{color::palettes::css::LIME, prelude::*};
 use rand::Rng;
 use rand::seq::IndexedRandom;
+use uuid::Uuid;
 
 const TOWER_COLOR: Color = Color::Srgba(LIME);
+const TOWERS_PER_AREA: i32 = 3;
 const CALL_COLOR: Color = Color::Srgba(DARK_GREEN);
 const CALL_CHANCE: u32 = 1;
 
 pub fn tower_plugin(app: &mut App) {
-    app.add_systems(Startup, init_towers);
+    app.add_systems(Startup, init_towers.after(crate::gis::spawn_basemap));
     app.add_systems(Update, (make_call, draw_calls, end_calls));
 }
 
 #[derive(Component)]
 pub struct Tower {
-    id: String,
+    id: Uuid,
 }
 
 fn init_towers(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    basemap: Res<crate::gis::Basemap>,
 ) {
     let tower_mesh = meshes.add(Triangle2d::new(
-        Vec2::Y * 20.0,
-        Vec2::new(-10.0, -10.0),
-        Vec2::new(10.0, -10.0),
+        Vec2::Y * 5.0,
+        Vec2::new(-2.5, -2.5),
+        Vec2::new(2.5, -2.5),
     ));
     let tower_color = materials.add(TOWER_COLOR);
-    for x_pos in (-400..400).step_by(100) {
-        let tower_position = Vec2 {
-            x: x_pos as f32,
-            y: 0.,
-        };
-        commands.spawn((
-            Tower {
-                id: "tower_central".to_string(),
-            },
-            Transform::from_translation(tower_position.extend(1.)),
-            Mesh2d(tower_mesh.clone()),
-            MeshMaterial2d(tower_color.clone()),
-        ));
+    let reprojection = basemap.geo_to_game_proj.as_ref().unwrap();
+    for area in &basemap.areas {
+        for _ in 0..TOWERS_PER_AREA {
+            let tower_pos_map = area.geometry.random_point();
+            let tower_position = reprojection.do_transform(tower_pos_map);
+
+            commands.spawn((
+                Tower { id: Uuid::new_v4() },
+                Transform::from_translation(tower_position.extend(1.)),
+                Mesh2d(tower_mesh.clone()),
+                MeshMaterial2d(tower_color.clone()),
+            ));
+        }
     }
 }
 
 #[derive(Component)]
-struct Call {
+pub struct Call {
     caller: Entity,
     tower: Entity,
     time_remaining: f32,
 }
 
+#[derive(Event)]
+pub struct CallStarted {
+    pub caller: Uuid,
+    pub tower: Uuid,
+}
+
 fn make_call(
-    pheeples: Query<(Entity, &Transform), With<Pheeple>>,
-    towers: Query<(Entity, &Transform), With<Tower>>,
+    pheeples: Query<(Entity, &Transform, &Pheeple)>,
+    towers: Query<(Entity, &Transform, &Tower)>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let mut rng = rand::rng();
-    for (pheeple, pheeple_trans) in pheeples {
+    for (pheeple, pheeple_trans, pheeple_data) in pheeples {
         if rng.random_ratio(CALL_CHANCE, 10000) {
-            let tower_list: Vec<(Entity, &Transform)> = towers.iter().collect();
-            let recieving_tower = tower_list
+            let tower_list: Vec<(Entity, &Transform, &Tower)> = towers.iter().collect();
+            let (tower_entity, tower_trans, tower_data) = tower_list
                 .choose_weighted(&mut rng, |t| {
                     1. / t.1.translation.distance(pheeple_trans.translation)
                 })
@@ -72,16 +82,20 @@ fn make_call(
             commands.spawn((
                 Call {
                     caller: pheeple,
-                    tower: recieving_tower.0,
+                    tower: *tower_entity,
                     time_remaining: rng.random_range(0.1..1.5),
                 },
                 Mesh2d(create_line(
                     &mut meshes,
                     pheeple_trans.translation.xy(),
-                    recieving_tower.1.translation.xy(),
+                    tower_trans.translation.xy(),
                 )),
                 MeshMaterial2d(materials.add(CALL_COLOR)),
             ));
+            commands.trigger(CallStarted {
+                caller: pheeple_data.phone_id,
+                tower: tower_data.id,
+            });
         }
     }
 }
