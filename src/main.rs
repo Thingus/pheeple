@@ -9,7 +9,6 @@ use args::{Args, ArgsError};
 use bevy::prelude::*;
 use config::Config;
 use getopts::Occur;
-use std::env;
 use std::path::PathBuf;
 use std::process::exit;
 

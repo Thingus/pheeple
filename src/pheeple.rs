@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::utils::RandomPoint;
-use bevy::{math::bounding::Aabb2d, prelude::*};
+use bevy::prelude::*;
 use rand::Rng;
 use uuid::Uuid;
 
@@ -89,30 +89,6 @@ fn spawn_pheeple(
         Home(home.extend(1.)),
         Work(work.extend(1.)),
     ));
-}
-
-fn init_pheeples(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    config: Res<Config>,
-) {
-    // let whole_neighbourhood = Aabb2d::new(vec2(0., 0.), vec2(340., 250.));
-    let home_neighbourhood = Aabb2d::new(vec2(-250., -30.), vec2(80., 100.));
-    let work_neighbourhood = Aabb2d::new(vec2(250., 30.), vec2(80., 100.));
-
-    for _ in 0..config.initial_pop {
-        let home = home_neighbourhood.random_point();
-        let work = work_neighbourhood.random_point();
-        spawn_pheeple(
-            &mut commands,
-            &mut meshes,
-            &mut materials,
-            home,
-            work,
-            &config,
-        )
-    }
 }
 
 pub fn hometime(

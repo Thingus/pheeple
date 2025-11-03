@@ -1,8 +1,6 @@
 use bevy::math::bounding::BoundingVolume;
 use bevy::{math::bounding::Aabb2d, prelude::*};
-use geojson::{
-    Feature, FeatureCollection, GeoJson, Geometry, LineStringType, PointType, PolygonType,
-};
+use geojson::{FeatureCollection, GeoJson, PointType, PolygonType};
 use std::convert::TryFrom;
 use std::fs;
 use std::path::PathBuf;
@@ -104,12 +102,11 @@ fn point_list_to_bbox(point_list: &Vec<Vec<f64>>) -> Aabb2d {
     } else {
         (xmin, xmax)
     };
-    let out = Aabb2d {
+    Aabb2d {
         min: Vec2::new(xmin as f32, ymin as f32),
         max: Vec2::new(xmax as f32, ymax as f32),
-    };
+    }
     // info!("point list translation: {out:#?}");
-    out
 }
 
 pub trait GeoBbox {

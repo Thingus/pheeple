@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use std::fs::File;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 const OUT_PATH: &str = "call_records.csv";
 

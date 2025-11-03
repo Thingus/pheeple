@@ -1,8 +1,7 @@
 use crate::pheeple::Pheeple;
 use crate::utils::RandomPoint;
-use bevy::color::palettes::css::DARK_GREEN;
 use bevy::mesh::VertexAttributeValues;
-use bevy::{color::palettes::css::LIME, prelude::*};
+use bevy::prelude::*;
 use rand::Rng;
 use rand::seq::IndexedRandom;
 use uuid::Uuid;
@@ -49,7 +48,6 @@ fn init_towers(
 #[derive(Component)]
 pub struct Call {
     caller: Entity,
-    tower: Entity,
     time_remaining: f32,
 }
 
@@ -61,7 +59,7 @@ pub struct CallStarted {
 
 fn make_call(
     pheeples: Query<(Entity, &Transform, &Pheeple)>,
-    towers: Query<(Entity, &Transform, &Tower)>,
+    towers: Query<(&Transform, &Tower)>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -70,16 +68,15 @@ fn make_call(
     let mut rng = rand::rng();
     for (pheeple, pheeple_trans, pheeple_data) in pheeples {
         if rng.random_ratio(config.call_chance, 10000) {
-            let tower_list: Vec<(Entity, &Transform, &Tower)> = towers.iter().collect();
-            let (tower_entity, tower_trans, tower_data) = tower_list
+            let tower_list: Vec<(&Transform, &Tower)> = towers.iter().collect();
+            let (tower_trans, tower_data) = tower_list
                 .choose_weighted(&mut rng, |t| {
-                    1. / t.1.translation.distance(pheeple_trans.translation)
+                    1. / t.0.translation.distance(pheeple_trans.translation)
                 })
                 .unwrap();
             commands.spawn((
                 Call {
                     caller: pheeple,
-                    tower: *tower_entity,
                     time_remaining: rng.random_range(0.1..1.5),
                 },
                 Mesh2d(create_line(
