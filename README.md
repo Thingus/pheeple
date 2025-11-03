@@ -24,19 +24,19 @@ This is a personal project, mainly as a Rust and Bevy exercise. That said, I've 
 - Docs
 - Better distribution via Cargo crate and/or build artefacts.
 - Complete rework of `gis.rs` to use [https://github.com/aevyrie/big_space](https://github.com/aevyrie/big_space) and some other GIS crates
- - Once done, implement scrolling and zoomable camera
- - Also make the populations limited to their areas (they're just a crude bounding box right now)
+  - Once done, implement scrolling and zoomable camera
+  - Also make the populations limited to their areas (they're just a crude bounding box right now)
 - Loading population densities and other metadata from the geojson, instead of just randomly populating areas
 - Likewise for loading arbitrary cell tower maps
 - Advanced Pheeple behavior:
- - Differing likelihood of phone use to reflect phone ownership patterns
- - Weekends
- - Travel via roads instead of direcly to their destination
+  - Differing likelihood of phone use to reflect phone ownership patterns
+  - Weekends
+  - Travel via roads instead of direcly to their destination
 - Advanced 'scenario' design
- - 'simulation time' instead of 'seconds passed'
- - Fleeing and displacements due to disasters
- - Tower outages
- - A timeline format for putting together chains of events that happen at certain dates
+  - 'simulation time' instead of 'seconds passed'
+  - Fleeing and displacements due to disasters
+  - Tower outages
+  - A timeline format for putting together chains of events that happen at certain dates
 - Headless mode for running larger simulations
 
 [Screencast from 23-10-25 17:37:13.webm](https://github.com/user-attachments/assets/70016966-b05d-4577-93f6-e5a47df53407)
