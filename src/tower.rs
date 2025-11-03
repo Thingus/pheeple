@@ -7,11 +7,6 @@ use rand::Rng;
 use rand::seq::IndexedRandom;
 use uuid::Uuid;
 
-const TOWER_COLOR: Color = Color::Srgba(LIME);
-const TOWERS_PER_AREA: i32 = 3;
-const CALL_COLOR: Color = Color::Srgba(DARK_GREEN);
-const CALL_CHANCE: u32 = 1;
-
 pub fn tower_plugin(app: &mut App) {
     app.add_systems(Startup, init_towers.after(crate::gis::spawn_basemap));
     app.add_systems(Update, (make_call, draw_calls, end_calls));
@@ -24,6 +19,7 @@ pub struct Tower {
 
 fn init_towers(
     mut commands: Commands,
+    config: Res<crate::config::Config>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     basemap: Res<crate::gis::Basemap>,
@@ -33,10 +29,10 @@ fn init_towers(
         Vec2::new(-2.5, -2.5),
         Vec2::new(2.5, -2.5),
     ));
-    let tower_color = materials.add(TOWER_COLOR);
+    let tower_color = materials.add(config.tower_color);
     let reprojection = basemap.geo_to_game_proj.as_ref().unwrap();
     for area in &basemap.areas {
-        for _ in 0..TOWERS_PER_AREA {
+        for _ in 0..config.towers_per_area {
             let tower_pos_map = area.geometry.random_point();
             let tower_position = reprojection.do_transform(tower_pos_map);
 
@@ -69,10 +65,11 @@ fn make_call(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    config: Res<crate::config::Config>,
 ) {
     let mut rng = rand::rng();
     for (pheeple, pheeple_trans, pheeple_data) in pheeples {
-        if rng.random_ratio(CALL_CHANCE, 10000) {
+        if rng.random_ratio(config.call_chance, 10000) {
             let tower_list: Vec<(Entity, &Transform, &Tower)> = towers.iter().collect();
             let (tower_entity, tower_trans, tower_data) = tower_list
                 .choose_weighted(&mut rng, |t| {
@@ -90,7 +87,7 @@ fn make_call(
                     pheeple_trans.translation.xy(),
                     tower_trans.translation.xy(),
                 )),
-                MeshMaterial2d(materials.add(CALL_COLOR)),
+                MeshMaterial2d(materials.add(config.call_color)),
             ));
             commands.trigger(CallStarted {
                 caller: pheeple_data.phone_id,

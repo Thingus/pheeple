@@ -3,9 +3,12 @@ name = "pheeples"
 version = "0.1.0"
 edition = "2024"
 
+
 [dependencies]
+args = "2.2.0"
 bevy = "0.17.1"
 geojson = "0.24.2"
+getopts = "0.2.24"
 rand = "0.9.2"
 shapefile = "0.7.0"
 uuid = "1.18.1"

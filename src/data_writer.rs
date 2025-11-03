@@ -9,7 +9,6 @@ const OUT_PATH: &str = "call_records.csv";
 struct CallLog {
     buffer: Vec<String>,
     file_handle: File,
-    out_path: PathBuf,
 }
 
 impl CallLog {
@@ -18,21 +17,23 @@ impl CallLog {
         file_handle.write_all(b"timestamp,caller,tower\n").unwrap();
         CallLog {
             buffer: vec![],
-            out_path: path.clone(),
             file_handle,
         }
     }
 }
 
 pub fn data_writer_plugin(app: &mut App) {
-    let mut out_path = PathBuf::new();
-    out_path.push(std::env::var("PHEEPLE_OUT_DIR").unwrap());
+    app.add_systems(Startup, init_data_writer);
+    app.add_observer(write_call_event_record);
+    app.add_systems(PostUpdate, flush_call_events);
+}
+
+fn init_data_writer(config: Res<crate::config::Config>, mut commands: Commands) {
+    let mut out_path = config.out_dir.clone();
     out_path.push(OUT_PATH);
     let out_path_str = out_path.display();
     info!("Simulated data at {out_path_str}");
-    app.insert_resource(CallLog::new(out_path));
-    app.add_observer(write_call_event_record);
-    app.add_systems(PostUpdate, flush_call_events);
+    commands.insert_resource(CallLog::new(out_path))
 }
 
 fn write_call_event_record(

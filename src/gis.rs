@@ -1,4 +1,3 @@
-use bevy::color::palettes::css::LIGHT_CYAN;
 use bevy::math::bounding::BoundingVolume;
 use bevy::{math::bounding::Aabb2d, prelude::*};
 use geojson::{
@@ -6,16 +5,14 @@ use geojson::{
 };
 use std::convert::TryFrom;
 use std::fs;
-use std::path::Path;
+use std::path::PathBuf;
 
-const MAP_PATH: &str = "/home/john/personal/pheeples/data/haiti_admin2.geojson";
-const BASEMAP_COLOR: Color = Color::Srgba(LIGHT_CYAN);
 pub fn gis_plugin(app: &mut App) {
-    app.init_resource::<Basemap>();
     app.add_systems(
         Startup,
         (
-            build_map_to_game_projection,
+            init_basemap,
+            build_map_to_game_projection.after(init_basemap),
             spawn_basemap.after(build_map_to_game_projection),
         ),
     );
@@ -46,10 +43,10 @@ pub struct Basemap {
     pub geo_to_game_proj: Option<GeoToGameProj>,
 }
 
-impl Default for Basemap {
-    fn default() -> Basemap {
-        info!("Loading admin areas from {MAP_PATH}");
-        let geojson_str = fs::read_to_string(MAP_PATH).unwrap();
+impl Basemap {
+    fn load(map_path: PathBuf) -> Basemap {
+        info!("Loading admin areas from {map_path:?}");
+        let geojson_str = fs::read_to_string(map_path).unwrap();
         let geojson = geojson_str.parse::<GeoJson>().unwrap();
         let admin_areas = FeatureCollection::try_from(geojson).unwrap();
         let n_areas = admin_areas.features.len();
@@ -76,6 +73,10 @@ impl Default for Basemap {
             geo_to_game_proj: None,
         }
     }
+}
+
+fn init_basemap(config: Res<crate::config::Config>, mut commands: Commands) {
+    commands.insert_resource(Basemap::load(config.map_path.clone()))
 }
 
 fn point_list_to_bbox(point_list: &Vec<Vec<f64>>) -> Aabb2d {
@@ -179,9 +180,17 @@ pub fn spawn_basemap(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    config: Res<crate::config::Config>,
 ) {
     for area in &basemap.areas {
-        spawn_area(area, &mut commands, &mut meshes, &mut materials, &basemap)
+        spawn_area(
+            area,
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &basemap,
+            config.basemap_color,
+        )
     }
 }
 
@@ -191,6 +200,7 @@ fn spawn_area(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     basemap: &Res<Basemap>,
+    basemap_color: Color,
 ) {
     let area_vertices = match &area.geometry {
         geojson::Value::Polygon(geom) => geom[0].clone(),
@@ -224,6 +234,6 @@ fn spawn_area(
     info!("Gameword coord: {poly_coord:#?}");
     commands.spawn((
         Mesh2d(meshes.add(area_polygon)),
-        MeshMaterial2d(materials.add(BASEMAP_COLOR)),
+        MeshMaterial2d(materials.add(basemap_color)),
     ));
 }

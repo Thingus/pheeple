@@ -1,66 +1,83 @@
+mod config;
 mod data_writer;
 mod gis;
 mod pheeple;
+mod time_and_date;
 mod tower;
 mod utils;
+use args::{Args, ArgsError};
 use bevy::prelude::*;
-// use rand::Rng;
-use std::time::Duration;
-const HALF_DAY_DURATION_SECS: u64 = 5;
+use config::Config;
+use getopts::Occur;
+use std::env;
+use std::path::PathBuf;
+use std::process::exit;
 
 #[derive(Component)]
 struct GameCamera;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
-enum DayNight {
-    #[default]
-    Day,
-    Night,
-}
+const PROGRAM_NAME: &str = "Pheeple";
+const PROGRAM_DESC: &str =
+    "A multi-agent simulation of a mobile population interacting with cellular towers.";
 
-#[derive(Resource)]
-struct HalfDayTimer {
-    timer: Timer,
-}
+fn parse_cli() -> Result<Config, ArgsError> {
+    let mut args = Args::new(PROGRAM_NAME, PROGRAM_DESC);
+    args.flag("h", "help", "Shows the help message");
+    args.option(
+        "b",
+        "basemap",
+        "Path to a geojson containing the basemap for the population you want to model.",
+        "BASEMAP",
+        Occur::Req,
+        None,
+    );
 
+    match args.parse_from_cli() {
+        Ok(_) => (),
+        Err(error) => return Err(error),
+    }
+
+    if args.value_of::<bool>("help").unwrap_or(false) {
+        print!("{}", args.full_usage());
+        exit(0);
+    };
+
+    let map_path = args.value_of::<PathBuf>("basemap")?;
+    if !map_path.is_file() {
+        return Err(ArgsError::new("", "Basemap path does not exist"));
+    }
+
+    println!("Config loaded successfully");
+
+    Ok(Config {
+        map_path,
+        ..Default::default()
+    })
+}
 fn main() {
+    println!("Loading config from cli...");
+    let config = match parse_cli() {
+        Ok(config) => config,
+        Err(err) => {
+            print!("{err}");
+            exit(1);
+        }
+    };
+    println!("App config:\n{config:?}");
     App::new()
+        .insert_resource(config)
         .add_plugins((
             DefaultPlugins,
             pheeple::pheeple_plugin,
             tower::tower_plugin,
             gis::gis_plugin,
             data_writer::data_writer_plugin,
+            time_and_date::time_and_date_plugin,
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, day_night_cycle)
-        .insert_state(DayNight::Day)
-        .add_systems(OnEnter::<DayNight>(DayNight::Day), pheeple::worktime)
-        .add_systems(OnEnter::<DayNight>(DayNight::Night), pheeple::hometime)
         .run();
-}
-
-fn day_night_cycle(
-    time: Res<Time>,
-    mut half_day_timer: ResMut<HalfDayTimer>,
-    current_day_night: Res<State<DayNight>>,
-    mut next_day_night: ResMut<NextState<DayNight>>,
-) {
-    half_day_timer.timer.tick(time.delta());
-    if half_day_timer.timer.just_finished() {
-        match current_day_night.get() {
-            DayNight::Day => next_day_night.set(DayNight::Night),
-            DayNight::Night => next_day_night.set(DayNight::Day),
-        };
-    };
 }
 
 fn setup(mut commands: Commands) {
     commands.spawn((Camera2d, GameCamera));
-    commands.insert_resource(HalfDayTimer {
-        timer: Timer::new(
-            Duration::from_secs(HALF_DAY_DURATION_SECS),
-            TimerMode::Repeating,
-        ),
-    })
 }
