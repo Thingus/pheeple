@@ -29,15 +29,13 @@ fn init_towers(
         Vec2::new(2.5, -2.5),
     ));
     let tower_color = materials.add(config.tower_color);
-    let reprojection = basemap.geo_to_game_proj.as_ref().unwrap();
     for area in &basemap.areas {
         for _ in 0..config.towers_per_area {
-            let tower_pos_map = area.geometry.random_point();
-            let tower_position = reprojection.do_transform(tower_pos_map);
+            let tower_pos = area.geometry.random_point();
 
             commands.spawn((
                 Tower { id: Uuid::new_v4() },
-                Transform::from_translation(tower_position.extend(1.)),
+                Transform::from_translation(tower_pos.extend(1.)),
                 Mesh2d(tower_mesh.clone()),
                 MeshMaterial2d(tower_color.clone()),
             ));

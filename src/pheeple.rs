@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::utils::RandomPoint;
 use bevy::prelude::*;
+use geo::Polygon;
 use rand::Rng;
 use uuid::Uuid;
 
@@ -42,16 +43,13 @@ fn init_from_basemap(
     config: Res<Config>,
 ) {
     let mut rng = rand::rng();
-    let reprojection = basemap.geo_to_game_proj.as_ref().unwrap();
     for area in &basemap.areas {
         let n_pheeples = rng.random_range(0..config.max_pheeple_per_area);
         let name = &area.name;
         info!("Generating {n_pheeples} for {name}");
         for _ in 0..n_pheeples {
-            let home_map = area.geometry.random_point();
-            let work_map = area.geometry.random_point();
-            let home = reprojection.do_transform(home_map);
-            let work = reprojection.do_transform(work_map);
+            let home = area.geometry.random_point();
+            let work = area.geometry.random_point();
             spawn_pheeple(
                 &mut commands,
                 &mut meshes,
