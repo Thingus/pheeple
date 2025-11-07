@@ -24,9 +24,9 @@ fn init_towers(
     basemap: Res<crate::gis::Basemap>,
 ) {
     let tower_mesh = meshes.add(Triangle2d::new(
-        Vec2::Y * 0.2,
-        Vec2::new(-0.25, -0.25),
-        Vec2::new(0.25, -0.25),
+        Vec2::Y * 0.002,
+        Vec2::new(-0.0025, -0.0025),
+        Vec2::new(0.0025, -0.0025),
     ));
     let tower_color = materials.add(config.tower_color);
     for area in &basemap.areas {

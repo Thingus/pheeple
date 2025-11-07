@@ -66,9 +66,9 @@ fn main() {
         .add_plugins((
             DefaultPlugins,
             pheeple::pheeple_plugin,
-            // tower::tower_plugin,
+            tower::tower_plugin,
             gis::gis_plugin,
-            // data_writer::data_writer_plugin,
+            data_writer::data_writer_plugin,
             time_and_date::time_and_date_plugin,
             camera::camera_plugin,
         ))
