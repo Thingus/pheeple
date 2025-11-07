@@ -51,3 +51,20 @@ impl RandomPoint for Polygon<f32> {
         panic!("John's kludgy random assigner failed")
     }
 }
+
+pub fn coord_to_vec(coord: geo::Coord<f32>) -> Vec2 {
+    Vec2 {
+        x: coord.x,
+        y: coord.y,
+    }
+}
+
+pub fn rect_to_aabb2d(rect: geo::Rect<f32>) -> Aabb2d {
+    Aabb2d::new(
+        coord_to_vec(rect.center()),
+        Vec2 {
+            x: rect.width() / 2.,
+            y: rect.height() / 2.,
+        },
+    )
+}

@@ -1,3 +1,4 @@
+mod camera;
 mod config;
 mod data_writer;
 mod gis;
@@ -11,9 +12,6 @@ use config::Config;
 use getopts::Occur;
 use std::path::PathBuf;
 use std::process::exit;
-
-#[derive(Component)]
-struct GameCamera;
 
 const PROGRAM_NAME: &str = "Pheeple";
 const PROGRAM_DESC: &str =
@@ -68,15 +66,11 @@ fn main() {
         .add_plugins((
             DefaultPlugins,
             pheeple::pheeple_plugin,
-            tower::tower_plugin,
+            // tower::tower_plugin,
             gis::gis_plugin,
-            data_writer::data_writer_plugin,
+            // data_writer::data_writer_plugin,
             time_and_date::time_and_date_plugin,
+            camera::camera_plugin,
         ))
-        .add_systems(Startup, setup)
         .run();
-}
-
-fn setup(mut commands: Commands) {
-    commands.spawn((Camera2d, GameCamera));
 }

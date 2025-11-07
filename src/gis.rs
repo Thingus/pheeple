@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use geo::{Geometry, Polygon};
+use geo::{Geometry, MultiPolygon, Polygon};
 use geojson::{FeatureCollection, GeoJson};
 use std::convert::TryFrom;
 use std::fs;
@@ -18,6 +18,7 @@ pub struct Area {
 #[derive(Resource)]
 pub struct Basemap {
     pub areas: Vec<Area>,
+    multipolygon: MultiPolygon<f32>,
 }
 
 impl Basemap {
@@ -44,11 +45,30 @@ impl Basemap {
             areas.push(new_area);
         }
 
-        Basemap { areas }
+        let multipolygon = MultiPolygon::new(areas.iter().map(|a| a.geometry.clone()).collect());
+
+        Basemap {
+            areas,
+            multipolygon,
+        }
     }
 }
 
-fn init_basemap(config: Res<crate::config::Config>, mut commands: Commands) {
+impl geo::BoundingRect<f32> for Area {
+    type Output = Option<geo::Rect<f32>>;
+    fn bounding_rect(&self) -> Self::Output {
+        self.geometry.bounding_rect()
+    }
+}
+
+impl geo::BoundingRect<f32> for Basemap {
+    type Output = Option<geo::Rect<f32>>;
+    fn bounding_rect(&self) -> Self::Output {
+        self.multipolygon.bounding_rect()
+    }
+}
+
+pub fn init_basemap(config: Res<crate::config::Config>, mut commands: Commands) {
     commands.insert_resource(Basemap::load(config.map_path.clone()))
 }
 
