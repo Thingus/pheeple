@@ -25,7 +25,7 @@ This is a personal project, mainly as a Rust and Bevy exercise. That said, I've 
 - Better distribution via Cargo crate and/or build artefacts.
 - Complete rework of `gis.rs` to use [https://github.com/aevyrie/big_space](https://github.com/aevyrie/big_space) and some other GIS crates
   - Once done, implement scrolling and zoomable camera
-  - Also make the populations limited to their areas (they're just a crude bounding box right now)
+  - ~Also make the populations limited to their areas (they're just a crude bounding box right now)~ Done
 - Loading population densities and other metadata from the geojson, instead of just randomly populating areas
 - Likewise for loading arbitrary cell tower maps
 - Advanced Pheeple behavior:
