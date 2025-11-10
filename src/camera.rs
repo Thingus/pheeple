@@ -3,6 +3,10 @@ use crate::utils::coord_to_vec;
 use bevy::prelude::*;
 use geo::BoundingRect;
 
+const SCROLL_RATE: f32 = 0.01;
+const ZOOM_RATE: f32 = 0.0001;
+const ZOOM_RANGE: std::ops::Range<f32> = 0.0001..0.003;
+
 pub fn camera_plugin(app: &mut App) {
     app.add_systems(Startup, setup.after(init_basemap));
     app.add_systems(
@@ -20,7 +24,7 @@ pub struct GameCamera {
 fn setup(mut commands: Commands, basemap: Res<crate::gis::Basemap>) {
     let extent = basemap.bounding_rect().unwrap();
     let start_origin = coord_to_vec(extent.center());
-    let start_scale = 0.003;
+    let start_scale = ZOOM_RANGE.end;
     let mut proj = OrthographicProjection::default_2d();
     proj.scale = start_scale;
 
@@ -34,10 +38,6 @@ fn setup(mut commands: Commands, basemap: Res<crate::gis::Basemap>) {
         Projection::Orthographic(proj),
     ));
 }
-
-const SCROLL_RATE: f32 = 0.01;
-const ZOOM_RATE: f32 = 0.0001;
-const ZOOM_RANGE: std::ops::Range<f32> = 0.0001..0.003;
 
 fn camera_movement(
     camera: Single<(&mut Transform, &mut Projection), With<GameCamera>>,
