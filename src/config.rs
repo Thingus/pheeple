@@ -22,9 +22,16 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         let mut map_path = PathBuf::new();
-        map_path.push("data/haiti_admin2.geojson");
+        map_path.push("no_default");
         let mut out_dir = PathBuf::new();
-        out_dir.push(std::env::var("PHEEPLE_OUT_DIR").unwrap());
+        match std::env::var("PHEEPLE_OUT_DIR") {
+            Ok(val) => out_dir.push(val),
+            Err(_) => {
+                let cwd = std::env::current_dir().unwrap();
+                out_dir.push(cwd);
+                out_dir.push("outputs");
+            }
+        };
         Self {
             half_day_duration_secs: 5,
             out_dir,

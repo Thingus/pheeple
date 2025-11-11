@@ -28,6 +28,14 @@ fn parse_cli() -> Result<Config, ArgsError> {
         Occur::Req,
         None,
     );
+    args.option(
+        "o",
+        "outfolder",
+        "Path to a folder to drop the simulated CDR data into",
+        "OUTFOLDER",
+        Occur::Req,
+        None,
+    );
 
     match args.parse_from_cli() {
         Ok(_) => (),
@@ -42,7 +50,13 @@ fn parse_cli() -> Result<Config, ArgsError> {
     let map_path = args.value_of::<PathBuf>("basemap")?;
     if !map_path.is_file() {
         return Err(ArgsError::new("", "Basemap path does not exist"));
-    }
+    };
+
+    let out_path = args.value_of::<PathBuf>("outfolder")?;
+    match out_path.try_exists() {
+        Ok(true) => (),
+        Ok(false) | Err(_) => return Err(ArgsError::new("", "out_file path does not exist")),
+    };
 
     println!("Config loaded successfully");
 
@@ -60,7 +74,7 @@ fn main() {
             exit(1);
         }
     };
-    println!("App config:\n{config:?}");
+    println!("App config:\n{config:#?}");
     App::new()
         .insert_resource(config)
         .add_plugins((
