@@ -1,7 +1,6 @@
 use crate::config::Config;
 use crate::utils::RandomPoint;
 use bevy::prelude::*;
-use geo::Polygon;
 use rand::Rng;
 use uuid::Uuid;
 
@@ -70,7 +69,7 @@ fn spawn_pheeple(
     work: Vec2,
     config: &Res<Config>,
 ) {
-    info!("Spawning pheeple at {home}");
+    debug!("Spawning pheeple at {home}");
     commands.spawn((
         Pheeple {
             behavior: Behavior::AtHome,
