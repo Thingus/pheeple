@@ -2067,9 +2067,9 @@ dependencies = [
 
 [[package]]
 name = "deranged"
-version = "0.5.4"
+version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a41953f86f8a05768a6cda24def994fd2f424b04ec5c719cf89989779f199071"
+checksum = "ececcb659e7ba858fb4f10388c250a7252eb0a27373f1a72b8748afdd248e587"
 dependencies = [
  "powerfmt",
 ]
@@ -3700,6 +3700,7 @@ dependencies = [
  "args",
  "bevy",
  "big_space",
+ "dbase",
  "geo",
  "geojson",
  "getopts",
@@ -4251,6 +4252,7 @@ checksum = "c318c0e76bc2d54086b2d936ae0ca92eab5b84eb73f5704c1d14dba33be643e3"
 dependencies = [
  "byteorder",
  "dbase",
+ "geo-types",
 ]
 
 [[package]]
