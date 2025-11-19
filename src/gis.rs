@@ -141,7 +141,7 @@ impl geo::BoundingRect<f32> for Basemap {
 pub fn init_basemap(config: Res<crate::config::Config>, mut commands: Commands) {
     commands.insert_resource(Basemap::load(
         config.map_path.clone(),
-        config.id_feature_name,
+        &config.id_feature_name,
     ))
 }
 

@@ -29,6 +29,14 @@ fn parse_cli() -> Result<Config, ArgsError> {
         None,
     );
     args.option(
+        "n",
+        "id_feature_name",
+        "Name of the feature to use as region ID",
+        "ID_FEATURE_NAME",
+        Occur::Optional,
+        Some("id_com".to_string()),
+    );
+    args.option(
         "o",
         "outfolder",
         "Path to a folder to drop the simulated CDR data into",

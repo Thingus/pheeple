@@ -17,6 +17,7 @@ pub struct Config {
     pub max_pheeple_per_area: i32,
     pub map_path: PathBuf,
     pub basemap_color: Color,
+    pub id_feature_name: String,
 }
 
 impl Default for Config {
@@ -46,6 +47,7 @@ impl Default for Config {
             max_pheeple_per_area: 300,
             map_path,
             basemap_color: Color::Srgba(LIGHT_CYAN),
+            id_feature_name: "id_com".to_string(),
         }
     }
 }
