@@ -66,10 +66,16 @@ fn parse_cli() -> Result<Config, ArgsError> {
         Ok(false) | Err(_) => return Err(ArgsError::new("", "out_file path does not exist")),
     };
 
+    let id_feature_name = match args.value_of::<String>("id_feature_name") {
+        Ok(val) => val,
+        Err(_) => Config::default().id_feature_name,
+    };
+
     println!("Config loaded successfully");
 
     Ok(Config {
         map_path,
+        id_feature_name,
         ..Default::default()
     })
 }

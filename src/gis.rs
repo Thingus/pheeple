@@ -44,7 +44,13 @@ impl Basemap {
         let mut areas: Vec<Area> = vec![];
 
         for feature in admin_areas.features {
-            let name = feature.property(id_feature).unwrap().to_string().clone();
+            let name = match feature.property(id_feature) {
+                Some(f) => f.to_string().clone(),
+                None => {
+                    warn!("Feature missing {id_feature}, continuing");
+                    continue;
+                }
+            };
             let geometry = match geo::Geometry::<f32>::try_from(feature) {
                 Err(err) => panic!("{err}"),
                 Ok(geom) => match geom {
@@ -171,8 +177,8 @@ fn spawn_area(
     basemap_color: Color,
 ) {
     let vertices = area.geometry.exterior().coords().map(|vert| Vec2 {
-        x: vert.x as f32,
-        y: vert.y as f32,
+        x: vert.x,
+        y: vert.y,
     });
     let area_polygon = Polyline2d::from_iter(vertices);
     let poly_coord = &area_polygon.vertices[0];
