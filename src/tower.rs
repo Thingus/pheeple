@@ -66,13 +66,23 @@ fn make_call(
     let mut rng = rand::rng();
     for (pheeple, pheeple_trans, pheeple_data) in pheeples {
         if rng.random_ratio(config.call_chance, 10000) {
-            let tower_list: Vec<(&Transform, &Tower)> = towers.iter().collect();
-            // We want to pick the closest tower to this pheeple most often
-            let (tower_trans, tower_data) = tower_list
-                .choose_weighted(&mut rng, |t| {
-                    1. / t.0.translation.distance(pheeple_trans.translation)
+            // Grab the all towers within max_call_dist
+            let tower_list: Vec<(&Transform, &Tower)> = towers
+                .iter()
+                .filter(|t| {
+                    t.0.translation.distance(pheeple_trans.translation) <= config.max_call_distance
                 })
-                .unwrap();
+                .collect();
+            // We want to pick the closest tower to this pheeple most often
+            let (tower_trans, tower_data) = match tower_list.choose_weighted(&mut rng, |t| {
+                1. / t.0.translation.distance(pheeple_trans.translation)
+            }) {
+                Ok(d) => d,
+                Err(_) => {
+                    info!("No towers in range");
+                    continue;
+                }
+            };
             commands.spawn((
                 Call {
                     caller: pheeple,
