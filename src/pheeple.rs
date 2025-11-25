@@ -1,4 +1,5 @@
 use crate::config::Config;
+use crate::movement::MoveBehavior;
 use crate::utils::RandomPoint;
 use bevy::prelude::*;
 use rand::Rng;
@@ -6,14 +7,17 @@ use uuid::Uuid;
 
 pub fn pheeple_plugin(app: &mut App) {
     app.add_systems(Startup, init_from_basemap.after(crate::gis::spawn_basemap));
-    app.add_systems(Update, (move_towards, check_arrived));
 }
 
+#[derive(Copy, Clone)]
 pub enum Behavior {
     Working,
     AtHome,
     TravellingToWork,
     TravellingToHome,
+    Fleeing,
+    Displaced,
+    Returning,
 }
 
 #[derive(Component)]
@@ -22,10 +26,18 @@ pub struct Pheeple {
     pub phone_id: Uuid,
 }
 
-#[derive(Component)]
-pub struct MoveBehavior {
-    velocity: f32,
-    target: Vec3,
+fn arrived(pheeple: Entity, mut commands: Commands) {
+    commands
+        .entity(pheeple)
+        .entry::<Pheeple>()
+        .and_modify(|mut p| {
+            p.behavior = match p.behavior {
+                Behavior::TravellingToWork => Behavior::Working,
+                Behavior::TravellingToHome => Behavior::AtHome,
+                Behavior::Fleeing => Behavior::Displaced,
+                _ => p.behavior,
+            }
+        });
 }
 
 #[derive(Component)]
@@ -82,6 +94,7 @@ fn spawn_pheeple(
         MoveBehavior {
             velocity: config.pheeple_speed,
             target: work.extend(1.),
+            arrived: arrived,
         },
         Home(home.extend(1.)),
         Work(work.extend(1.)),
@@ -98,9 +111,12 @@ pub fn hometime(
         commands.entity(entity).insert(MoveBehavior {
             velocity: config.pheeple_speed,
             target: home.0,
+            arrived: arrived_at_home,
         });
     }
 }
+
+pub fn arrived_at_home(entity: Entity) {}
 
 pub fn worktime(
     query: Query<(Entity, &mut Pheeple, &Work)>,
@@ -114,6 +130,13 @@ pub fn worktime(
             target: work.0,
         });
     }
+}
+
+pub fn flee(
+    query: Query<(Entity, &mut Pheeple), Where(Fleeing)>,
+    mut commands: Commands,
+    config: Res<Config>,
+) {
 }
 
 fn move_towards(mut query: Query<(&mut Transform, &MoveBehavior)>, time: Res<Time>) {
@@ -135,8 +158,8 @@ fn check_arrived(
             pheeple.behavior = match pheeple.behavior {
                 Behavior::TravellingToWork => Behavior::Working,
                 Behavior::TravellingToHome => Behavior::AtHome,
-                Behavior::AtHome => Behavior::AtHome,
-                Behavior::Working => Behavior::Working,
+                Behavior::Fleeing => Behavior::Displaced,
+                _ => pheeple.behavior,
             };
             commands.entity(entity).remove::<MoveBehavior>();
         }

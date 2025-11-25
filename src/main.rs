@@ -2,6 +2,7 @@ mod camera;
 mod config;
 mod data_writer;
 mod gis;
+mod movement;
 mod pheeple;
 mod time_and_date;
 mod tower;
@@ -99,6 +100,7 @@ fn main() {
             data_writer::data_writer_plugin,
             time_and_date::time_and_date_plugin,
             camera::camera_plugin,
+            movement::movement_plugin,
         ))
         .run();
 }
